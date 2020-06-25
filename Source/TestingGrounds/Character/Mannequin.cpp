@@ -39,6 +39,10 @@ void AMannequin::BeginPlay()
 	FPGun = GetWorld()->SpawnActor<AGun>(GunBlueprint);
 	FPGun->AttachToComponent(FPArms, FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT("GripPoint"));
 	FPGun->AnimInstance = FPArms->GetAnimInstance();
+	if (InputComponent != NULL)
+	{
+		InputComponent->BindAction("Fire", IE_Pressed, this, &AMannequin::PullTrigger);
+	}
 }
 
 // Called every frame
@@ -55,7 +59,8 @@ void AMannequin::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 }
 
-void AMannequin::Fire()
+void AMannequin::PullTrigger()
 {
-	FPGun->OnFire();
+	if(FPGun != NULL)
+		FPGun->OnFire();
 }
