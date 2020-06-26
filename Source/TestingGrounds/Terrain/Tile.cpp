@@ -2,6 +2,7 @@
 
 #include "Tile.h"
 #include "Engine/World.h"
+#include "DrawDebugHelpers.h"
 
 
 // Sets default values
@@ -11,18 +12,53 @@ ATile::ATile()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
-void ATile::PlaceActors(TSubclassOf<AActor> ToSpawn, int32 MinSpawn, int32 MaxSpawn)
+void ATile::PlaceActors(TSubclassOf<AActor> ToSpawn, int32 MinSpawn, int32 MaxSpawn, float Radius)
 {
-	FVector Min(0,-2000,0), Max(4000,2000,0);
-	FBox Bounds(Min, Max);
 	int32 NumberToSpawn = FMath::RandRange(MinSpawn, MaxSpawn);
+	FVector SpawnPoint;
 	for (size_t i = 0; i < NumberToSpawn; i++)
 	{
-		FVector SpawnPoint = FMath::RandPointInBox(Bounds);
-		AActor* Spawned = GetWorld()->SpawnActor<AActor>(ToSpawn,SpawnPoint,FRotator(0,0,0));
-		Spawned->SetActorRelativeLocation(SpawnPoint);
-		Spawned->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepRelative,false));
+		if (FindEmptyLocation(SpawnPoint, Radius))
+		{
+			PlaceActor(ToSpawn, SpawnPoint);
+		}
 	}
+}
+
+bool ATile::FindEmptyLocation(FVector &Point, float Radius)
+{
+	FVector Min(0+GetActorLocation().X, -2000, 0), Max(4000+GetActorLocation().X, 2000, 0);
+	FBox Bounds(Min, Max);
+	const int32 MAX_ATTEMPTS = 100;
+	for (size_t i = 0; i < MAX_ATTEMPTS; i++)
+	{
+		Point = FMath::RandPointInBox(Bounds);
+		if (CanSpawnAtLocation(Point, Radius))
+			return true;
+	}
+	return false;
+}
+
+void ATile::PlaceActor(TSubclassOf<AActor> ToSpawn, FVector SpawnPoint)
+{
+	AActor* Spawned = GetWorld()->SpawnActor<AActor>(ToSpawn, SpawnPoint, FRotator(0, 0, 0));
+	Spawned->SetActorRelativeLocation(SpawnPoint);
+	Spawned->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepWorld,false));
+}
+
+bool ATile::CanSpawnAtLocation(FVector Location, float Radius)
+{
+	FHitResult HitResult;
+	bool HasHit = GetWorld()->SweepSingleByChannel(
+		HitResult, 
+		Location, 
+		Location, 
+		FQuat::Identity, 
+		ECollisionChannel::ECC_GameTraceChannel2, 
+		FCollisionShape::MakeSphere(Radius));
+	FColor ResultColor = HasHit ? FColor::Red : FColor::Green;
+	DrawDebugCapsule(GetWorld(), Location, 0, Radius, FQuat::Identity, ResultColor ,true, 100);
+	return !HasHit;
 }
 
 // Called when the game starts or when spawned
