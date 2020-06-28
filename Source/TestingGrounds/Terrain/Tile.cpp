@@ -69,7 +69,7 @@ bool ATile::FindEmptyLocation(FVector &Point, float Radius)
 	FVector Min = MinExtent + FVector(GetActorLocation().X, 0.f, 0.f);
 	FVector Max = MaxExtent + FVector(GetActorLocation().X, 0.f, 0.f);
 	FBox Bounds(Min, Max);
-	const int32 MAX_ATTEMPTS = 100;
+	const int32 MAX_ATTEMPTS = 20;
 	for (size_t i = 0; i < MAX_ATTEMPTS; i++)
 	{
 		Point = FMath::RandPointInBox(Bounds);
@@ -81,24 +81,20 @@ bool ATile::FindEmptyLocation(FVector &Point, float Radius)
 
 void ATile::PlaceActor(TSubclassOf<AActor> ToSpawn, const FSpawnPosition& SpawnPosition)
 {
-	AActor* Spawned = GetWorld()->SpawnActor<AActor>(ToSpawn, SpawnPosition.Location, FRotator(0, 0, 0));
+	AActor* Spawned = GetWorld()->SpawnActor<AActor>(ToSpawn, SpawnPosition.Location, FRotator(0, SpawnPosition.Rotation, 0));
 	if (Spawned != nullptr)
 	{
-		Spawned->SetActorRelativeLocation(SpawnPosition.Location);
 		Spawned->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepWorld, false));
-		Spawned->SetActorRotation(FRotator(0, SpawnPosition.Rotation, 0));
 		Spawned->SetActorScale3D(FVector(SpawnPosition.Scale));
 	}
 }
 
 void ATile::PlaceActor(TSubclassOf<APawn> ToSpawn, const FSpawnPosition &SpawnPosition)
 {
-	APawn* Spawned = GetWorld()->SpawnActor<APawn>(ToSpawn, SpawnPosition.Location, FRotator(0, 0, 0));
+	APawn* Spawned = GetWorld()->SpawnActor<APawn>(ToSpawn, SpawnPosition.Location, FRotator(0, SpawnPosition.Rotation, 0));
 	if (Spawned != nullptr)
 	{
-		Spawned->SetActorRelativeLocation(SpawnPosition.Location);
 		Spawned->AttachToActor(this, FAttachmentTransformRules(EAttachmentRule::KeepWorld, false));
-		Spawned->SetActorRotation(FRotator(0, SpawnPosition.Rotation, 0));
 		Spawned->SpawnDefaultController();
 		Spawned->Tags.Add(FName("Enemy"));
 	}
